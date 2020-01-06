@@ -45,7 +45,7 @@ namespace BangazonWorkforce.Controllers
                      e.FirstName,
                     e.LastName,
                     e.DepartmentId,
-                    d.Name,
+                    d.[Name],
                     e.IsSuperVisor
                     FROM Employee e
                     LEFT JOIN Department d ON e.DepartmentId = d.Id";
