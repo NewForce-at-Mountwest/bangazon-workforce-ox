@@ -32,13 +32,15 @@ namespace BangazonWorkforce.Controllers
                 return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
             }
         }
-        // GET: Students
+        // GET: Employees
         public ActionResult Index()
         {
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
+
+                    // SQL Query to select Employees
                 {
                     cmd.CommandText = @"
                      SELECT e.Id,
@@ -51,9 +53,12 @@ namespace BangazonWorkforce.Controllers
                     LEFT JOIN Department d ON e.DepartmentId = d.Id";
                     SqlDataReader reader = cmd.ExecuteReader();
 
+                    // Create list of type Employee containing Employees
+
                     List<Employee> employees = new List<Employee>();
                     while (reader.Read())
                     {
+                        // Create single Employee
                         Employee employee = new Employee
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -67,6 +72,7 @@ namespace BangazonWorkforce.Controllers
                             }
                         };
 
+                        // Add single employee to the list
                         employees.Add(employee);
                     }
 
