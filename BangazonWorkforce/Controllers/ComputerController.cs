@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using BangazonWorkforce.Models;
-//using BangazonWorkforce.Models.ViewModels;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using BangazonWorkforce.Models.ViewModels;
 
 
 
@@ -43,13 +44,11 @@ namespace BangazonWorkforce.Controllers
                 // SQL Query to select Computers
                 {
                     cmd.CommandText = @"
-                     SELECT c.Id,
+                     SELECT  c.Id,
                      c.PurchaseDate,
                     c.DecomissionDate,
-                    c.DecomissionDate,
                     c.Make,
-                    c.Manufacturer
-                    FROM Computer c";
+                    c.Manufacturer FROM Computer c";
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     // Create list of type Computer containing Computers
@@ -62,15 +61,20 @@ namespace BangazonWorkforce.Controllers
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
-                            DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
                             Make = reader.GetString(reader.GetOrdinal("Make")),
                             Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer"))
-                        }; if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate"))) 
-
-
-                            // Add single computer to the list
-                                computers.Add(computer);
                         };
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                        };
+
+
+
+                        // Add single computer to the list
+                        computers.Add(computer);
+                    }
 
                     reader.Close();
 
@@ -78,214 +82,227 @@ namespace BangazonWorkforce.Controllers
                 }
             }
         }
+
+
+
+
+        // GET: Computers/Details/5
+        public ActionResult Details(int Id)
+        {
+
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                SELECT
+                    Id, PurchaseDate, DecomissionDate, Make, Manufacturer
+                FROM Computer Where Id =@Id";
+                    cmd.Parameters.Add(new SqlParameter("@Id", Id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Computer computer = new Computer();
+
+                    if (reader.Read())
+                    {
+                        computer = new Computer
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                            Make = reader.GetString(reader.GetOrdinal("Make")),
+                            Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer"))
+
+                        };
+                        if (!reader.IsDBNull(reader.GetOrdinal("DecomissionDate")))
+                        {
+                            computer.DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate"));
+                        };
+                    }
+                    reader.Close();
+
+
+                    return View(computer);
+                }
+            }
+        }
+
+
+
+
+
+        ActionResult ViewResult(Computer computer)
+        {
+            throw new NotImplementedException();
+        }
+
+        //GET: Computers/Create
+        public ActionResult Create()
+        {
+            // Create a new instance of a CreateComputerViewModel
+            // If we want to get all the ccmputers, we need to use the constructor that's expecting a connection string. 
+            // When we create this instance, the constructor will run and get all the computers.
+           CreateComputerViewModel ComputerViewModel = new CreateComputerViewModel(_config.GetConnectionString("DefaultConnection"));
+
+            // Once we've created it, we can pass it to the view
+            return View(ComputerViewModel);
+        }
+
+        // POST: Computers/Create
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Create(CreateComputerViewModel model)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"INSERT INTO Computer
+        ( Id, PurchaseDate, DecomissionsDate, Make, Manufacturer )
+        VALUES
+        ( @PurchaseDate, @DecomissionDate, @Make, @Manufacturer )";
+                    cmd.Parameters.Add(new SqlParameter("@PurchaseDate", model.computer.PurchaseDate));
+                    cmd.Parameters.Add(new SqlParameter("@DecomissionDate", model.computer.Make));
+                    cmd.Parameters.Add(new SqlParameter("@Make", model.computer.Manufacturer));
+                    cmd.Parameters.Add(new SqlParameter("@Manufacturer", model.computer.Manufacturer));
+                    cmd.ExecuteNonQuery();
+
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+        }
+
+
+        //// GET: Computers/Edit/5
+        //public ActionResult Edit(int id)
+        //{
+        //    // Create a new instance of a ComputerEditViewModel
+        //    // Pass it the computerId and a connection string to the database
+        //    ComputerEditViewModel viewModel = new ComputerEditViewModel(id, _config.GetConnectionString("DefaultConnection"));
+
+        //    // The view model's constructor will work its magic
+        //    // Pass the new instance of the view model to the view
+
+        //    return View(viewModel);
+        //}
+
+        //POST: Computers/Edit/5
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public ActionResult Edit(int id, ComputerEditViewModel computerViewModel)
+        //{
+        //    try
+        //    {
+        //        using (SqlConnection conn = Connection)
+        //        {
+        //            conn.Open();
+        //            using (SqlCommand cmd = conn.CreateCommand())
+        //            {
+
+        //                // First, update the computer's information, including their Manufacturer
+        //                // Wipe out all their previously assigned exercises in the join table
+        //                string command = @"UPDATE Computer
+        //                                    SET PurchaseDate=@PurchaseDate, 
+        //                                    DecomissionDate=@DecomissionDate, 
+        //                                    Make=@Make, 
+        //                                    Manufacturer=@Manufacturer
+        //                                    WHERE Id = @id
+        //                                    DELETE FROM ComputerExercise WHERE computerId =@id";
+
+        //                // Loop over the selected exercises and add a new entry for each exercise
+        //                computerViewModel.SelectedExercises.ForEach(exerciseId =>
+        //                {
+        //                    command += $" INSERT INTO ComputerExercise (ComputerId, ExerciseId) VALUES (@id, {exerciseId})";
+
+        //                });
+        //                cmd.CommandText = command;
+        //                cmd.Parameters.Add(new SqlParameter("@PurchaseDate", computerViewModel.Computer.PurchaseDate));
+        //                cmd.Parameters.Add(new SqlParameter("@DecomissionDate", computerViewModel.Computer.Make));
+        //                cmd.Parameters.Add(new SqlParameter("@Make", computerViewModel.Computer.Manufacturer));
+        //                cmd.Parameters.Add(new SqlParameter("@Manufacturer", computerViewModel.Computer.Manufacturer));
+        //                cmd.Parameters.Add(new SqlParameter("@id", id));
+
+        //                int rowsAffected = cmd.ExecuteNonQuery();
+
+        //            }
+
+        //        }
+
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    catch
+        //    {
+        //        return View(computerViewModel);
+        //    }
+        //}
+
+        // GET: Computers/Delete/5
+        public ActionResult Delete(int id)
+{
+    using (SqlConnection conn = Connection)
+    {
+        conn.Open();
+        using (SqlCommand cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
+                        SELECT
+                            Id, PurchaseDate, DecomissionDate, Make, Manufacturer
+                        FROM Computer
+                        WHERE Id = @id";
+            cmd.Parameters.Add(new SqlParameter("@id", id));
+            SqlDataReader reader = cmd.ExecuteReader();
+
+            Computer Computer = null;
+
+            if (reader.Read())
+            {
+                Computer = new Computer
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                    DecomissionDate = reader.GetDateTime(reader.GetOrdinal("DecomissionDate")),
+                    Make = reader.GetString(reader.GetOrdinal("Make")),
+                    Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer"))
+
+                };
+            }
+            reader.Close();
+
+            return View(Computer);
+        }
     }
 }
 
-//// GET: Students/Details/5
-//public ActionResult Details(int id)
-//{
+// POST: Computers/Delete/5
+[HttpPost]
+[ValidateAntiForgeryToken]
+public ActionResult Delete(int id, IFormCollection collection)
+{
+    try
+    {
 
-//    using (SqlConnection conn = Connection)
-//    {
-//        conn.Open();
-//        using (SqlCommand cmd = conn.CreateCommand())
-//        {
-//            cmd.CommandText = @"
-//                SELECT
-//                    Id, FirstName, LastName, SlackHandle, CohortId
-//                FROM Student
-//                WHERE Id = @id";
-//            cmd.Parameters.Add(new SqlParameter("@id", id));
-//            SqlDataReader reader = cmd.ExecuteReader();
+        using (SqlConnection conn = Connection)
+        {
+            conn.Open();
+            using (SqlCommand cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"DELETE FROM Computer WHERE computerId = @id
+                        DELETE FROM Computer WHERE Id = @id";
+                cmd.Parameters.Add(new SqlParameter("@id", id));
 
-//            Student student = new Student();
+                int rowsAffected = cmd.ExecuteNonQuery();
 
-//            if (reader.Read())
-//            {
-//                student = new Student
-//                {
-//                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-//                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-//                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
-//                    SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-//                    CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
+            }
+        }
 
-//                };
-//            }
-//            reader.Close();
-
-
-//            return View(student);
-//        }
-//    }
-//}
-
-////GET: Students/Create
-//public ActionResult Create()
-//{
-//    // Create a new instance of a CreateStudentViewModel
-//    // If we want to get all the cohorts, we need to use the constructor that's expecting a connection string. 
-//    // When we create this instance, the constructor will run and get all the cohorts.
-//    CreateStudentViewModel studentViewModel = new CreateStudentViewModel(_config.GetConnectionString("DefaultConnection"));
-
-//    // Once we've created it, we can pass it to the view
-//    return View(studentViewModel);
-//}
-
-//// POST: Students/Create
-
-//[HttpPost]
-//[ValidateAntiForgeryToken]
-//public async Task<ActionResult> Create(CreateStudentViewModel model)
-//{
-//    using (SqlConnection conn = Connection)
-//    {
-//        conn.Open();
-//        using (SqlCommand cmd = conn.CreateCommand())
-//        {
-//            cmd.CommandText = @"INSERT INTO Student
-//        ( FirstName, LastName, SlackHandle, CohortId )
-//        VALUES
-//        ( @firstName, @lastName, @slackHandle, @cohortId )";
-//            cmd.Parameters.Add(new SqlParameter("@firstName", model.student.FirstName));
-//            cmd.Parameters.Add(new SqlParameter("@lastName", model.student.LastName));
-//            cmd.Parameters.Add(new SqlParameter("@slackHandle", model.student.SlackHandle));
-//            cmd.Parameters.Add(new SqlParameter("@cohortId", model.student.CohortId));
-//            cmd.ExecuteNonQuery();
-
-//            return RedirectToAction(nameof(Index));
-//        }
-//    }
-//}
-
-//// GET: Students/Edit/5
-//public ActionResult Edit(int id)
-//{
-//    // Create a new instance of a StudentEditViewModel
-//    // Pass it the studentId and a connection string to the database
-//    StudentEditViewModel viewModel = new StudentEditViewModel(id, _config.GetConnectionString("DefaultConnection"));
-
-//    // The view model's constructor will work its magic
-//    // Pass the new instance of the view model to the view
-
-//    return View(viewModel);
-//}
-
-// POST: Students/Edit/5
-//[HttpPost]
-//[ValidateAntiForgeryToken]
-//public ActionResult Edit(int id, StudentEditViewModel studentViewModel)
-//{
-//    try
-//    {
-//        using (SqlConnection conn = Connection)
-//        {
-//            conn.Open();
-//            using (SqlCommand cmd = conn.CreateCommand())
-//            {
-
-//                // First, update the student's information, including their cohortId
-//                // Wipe out all their previously assigned exercises in the join table
-//                string command = @"UPDATE Student
-//                                    SET firstName=@firstName, 
-//                                    lastName=@lastName, 
-//                                    slackHandle=@slackHandle, 
-//                                    cohortId=@cohortId
-//                                    WHERE Id = @id
-//                                    DELETE FROM StudentExercise WHERE studentId =@id";
-
-//                // Loop over the selected exercises and add a new entry for each exercise
-//                studentViewModel.SelectedExercises.ForEach(exerciseId =>
-//                {
-//                    command += $" INSERT INTO StudentExercise (StudentId, ExerciseId) VALUES (@id, {exerciseId})";
-
-//                });
-//                cmd.CommandText = command;
-//                cmd.Parameters.Add(new SqlParameter("@firstName", studentViewModel.Student.FirstName));
-//                cmd.Parameters.Add(new SqlParameter("@lastName", studentViewModel.Student.LastName));
-//                cmd.Parameters.Add(new SqlParameter("@slackHandle", studentViewModel.Student.SlackHandle));
-//                cmd.Parameters.Add(new SqlParameter("@cohortId", studentViewModel.Student.CohortId));
-//                cmd.Parameters.Add(new SqlParameter("@id", id));
-
-//                int rowsAffected = cmd.ExecuteNonQuery();
-
-//            }
-
-//        }
-
-//        return RedirectToAction(nameof(Index));
-//    }
-//    catch
-//    {
-//        return View(studentViewModel);
-//    }
-//}
-
-//        // GET: Students/Delete/5
-//        public ActionResult Delete(int id)
-//        {
-//            using (SqlConnection conn = Connection)
-//            {
-//                conn.Open();
-//                using (SqlCommand cmd = conn.CreateCommand())
-//                {
-//                    cmd.CommandText = @"
-//                        SELECT
-//                            Id, firstName, lastName, slackHandle, cohortId
-//                        FROM Student
-//                        WHERE Id = @id";
-//                    cmd.Parameters.Add(new SqlParameter("@id", id));
-//                    SqlDataReader reader = cmd.ExecuteReader();
-
-//                    Student Student = null;
-
-//                    if (reader.Read())
-//                    {
-//                        Student = new Student
-//                        {
-//                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-//                            FirstName = reader.GetString(reader.GetOrdinal("firstName")),
-//                            LastName = reader.GetString(reader.GetOrdinal("lastName")),
-//                            SlackHandle = reader.GetString(reader.GetOrdinal("slackHandle")),
-//                            CohortId = reader.GetInt32(reader.GetOrdinal("cohortId"))
-
-//                        };
-//                    }
-//                    reader.Close();
-
-//                    return View(Student);
-//                }
-//            }
-//        }
-
-//        // POST: Students/Delete/5
-//        [HttpPost]
-//        [ValidateAntiForgeryToken]
-//        public ActionResult Delete(int id, IFormCollection collection)
-//        {
-//            try
-//            {
-
-//                using (SqlConnection conn = Connection)
-//                {
-//                    conn.Open();
-//                    using (SqlCommand cmd = conn.CreateCommand())
-//                    {
-//                        cmd.CommandText = @"DELETE FROM StudentExercise WHERE studentId = @id
-//                        DELETE FROM Student WHERE Id = @id";
-//                        cmd.Parameters.Add(new SqlParameter("@id", id));
-
-//                        int rowsAffected = cmd.ExecuteNonQuery();
-
-//                    }
-//                }
-
-//                return RedirectToAction(nameof(Index));
-//            }
-//            catch
-//            {
-//                return View();
-//            }
-//        }
-//    }
-//}
+        return RedirectToAction(nameof(Index));
+    }
+    catch
+    {
+        return View();
+    }
+}
+    }
+}
