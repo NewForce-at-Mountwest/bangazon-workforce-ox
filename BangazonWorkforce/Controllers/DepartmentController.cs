@@ -154,7 +154,20 @@ namespace BangazonWorkforce.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(Department department)
         {
-            return View();
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"INSERT INTO Department(Name, Budget)
+VALUES
+(@Name,@Budget)";
+                    cmd.Parameters.Add(new SqlParameter("@Name", department.Name));
+                    cmd.Parameters.Add(new SqlParameter("@Budget", department.Budget));
+                    cmd.ExecuteNonQuery();
+                    return RedirectToAction(nameof(Index));
+                }
+            }
         }
 
         // GET: Department/Edit/5
