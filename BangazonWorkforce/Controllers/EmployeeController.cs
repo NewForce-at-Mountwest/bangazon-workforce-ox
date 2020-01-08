@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using BangazonWorkforce.Models;
-//using BangazonWorkforce.Models.ViewModels;
+using BangazonWorkforce.Models.ViewModels;
 
 
 
@@ -40,7 +40,7 @@ namespace BangazonWorkforce.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
 
-                    // SQL Query to select Employees
+                // SQL Query to select Employees
                 {
                     cmd.CommandText = @"
                      SELECT e.Id,
@@ -82,148 +82,280 @@ namespace BangazonWorkforce.Controllers
                 }
             }
         }
+
+        public ActionResult Details(int id)
+        {
+            EmployeeDetailsViewModel employee = GetEmployeeById(id);
+            return View(employee);
+        }
+
+
+        private EmployeeDetailsViewModel GetEmployeeById(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                                SELECT e.Id AS EmployeeId, 
+                                e.FirstName, 
+                                e.LastName, 
+                                d.[Name] AS DepartmentName, 
+                                c.Id AS ComputerId, 
+                                c.Make, 
+                                c.Manufacturer,
+                                ce.Id AS ComputerEmployeeId,
+                                ce.AssignDate,
+                                ce.UnassignDate,
+                                tp.Id AS TrainingProgramId, 
+                                tp.Name AS TrainingProgramName
+                                FROM Employee e 
+                                LEFT JOIN Department d ON e.DepartmentId = d.Id
+                                LEFT JOIN ComputerEmployee ce ON ce.EmployeeId = e.id 
+                                LEFT JOIN Computer c ON c.id = ce.ComputerId 
+                                LEFT JOIN EmployeeTraining et ON et.EmployeeId = e.Id
+                                LEFT JOIN TrainingProgram tp ON tp.Id = et.TrainingProgramId 
+                                WHERE e.Id = @id";
+
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    EmployeeDetailsViewModel model = null;
+
+
+                    while (reader.Read())
+                    {
+                        if (model == null)
+                        {
+                            model = new EmployeeDetailsViewModel();
+                            model.Employee = new Employee
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                CurrentDepartment = new Department
+                                {
+                                    Name = reader.GetString(reader.GetOrdinal("DepartmentName"))
+                                }
+                            };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("ComputerId")) && (reader.IsDBNull(reader.GetOrdinal("UnassignDate"))))
+                        {
+                            model.AssignedComputer = new Computer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                Make = reader.GetString(reader.GetOrdinal("Make")),
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer"))
+                            };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("ComputerEmployeeId")) && (reader.IsDBNull(reader.GetOrdinal("UnassignDate"))))
+                        {
+                            model.ComputerEmployee = new ComputerEmployee
+                            {
+                                AssignDate = reader.GetDateTime(reader.GetOrdinal("AssignDate"))
+                            };
+                        }
+
+                        if (!reader.IsDBNull(reader.GetOrdinal("TrainingProgramId")))
+                        {
+                            if (model.TrainingPrograms.Any(p => p.Id == reader.GetInt32(reader.GetOrdinal("TrainingProgramId"))))
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                TrainingProgram trainingProgram = new TrainingProgram
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("TrainingProgramId")),
+                                    Name = reader.GetString(reader.GetOrdinal("TrainingProgramName"))
+                                };
+
+                                model.TrainingPrograms.Add(trainingProgram);
+                            }
+                        }
+                    }
+                    reader.Close();
+                    return model;
+                }
+            }
+        }
     }
 }
 
-        //// GET: Students/Details/5
-        //public ActionResult Details(int id)
-        //{
-
-        //    using (SqlConnection conn = Connection)
-        //    {
-        //        conn.Open();
-        //        using (SqlCommand cmd = conn.CreateCommand())
-        //        {
-        //            cmd.CommandText = @"
-        //                SELECT
-        //                    Id, FirstName, LastName, SlackHandle, CohortId
-        //                FROM Student
-        //                WHERE Id = @id";
-        //            cmd.Parameters.Add(new SqlParameter("@id", id));
-        //            SqlDataReader reader = cmd.ExecuteReader();
-
-        //            Student student = new Student();
-
-        //            if (reader.Read())
-        //            {
-        //                student = new Student
-        //                {
-        //                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-        //                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-        //                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
-        //                    SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-        //                    CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
-
-        //                };
-        //            }
-        //            reader.Close();
 
 
-        //            return View(student);
-        //        }
-        //    }
-        //}
+//        //// GET: Students/Details/5
+//        public ActionResult Details(int id)
+//        {
 
-        ////GET: Students/Create
-        //public ActionResult Create()
-        //{
-        //    // Create a new instance of a CreateStudentViewModel
-        //    // If we want to get all the cohorts, we need to use the constructor that's expecting a connection string. 
-        //    // When we create this instance, the constructor will run and get all the cohorts.
-        //    CreateStudentViewModel studentViewModel = new CreateStudentViewModel(_config.GetConnectionString("DefaultConnection"));
+//            using (SqlConnection conn = Connection)
+//            {
+//                conn.Open();
+//                using (SqlCommand cmd = conn.CreateCommand())
+//                {
+//                    cmd.CommandText = @"
+//                                SELECT e.Id AS EmployeeId, 
+//                                e.FirstName, 
+//                                e.LastName, 
+//                                d.[Name] AS DepartmentName, 
+//                                c.Id AS ComputerId, 
+//                                c.Make, 
+//                                c.Manufacturer,
+//                                ce.Id AS ComputerEmployeeId,
+//                                ce.AssignDate,
+//                                ce.UnassignDate,
+//                                tp.Id AS TrainingProgramId,
+//                                tp.Name AS TrainingProgramName
+//                                FROM Employee e
+//                                LEFT JOIN Department d ON e.DepartmentId = d.Id
+//                                LEFT JOIN ComputerEmployee ce ON ce.EmployeeId = e.id
+//                                LEFT JOIN Computer c ON c.id = ce.ComputerId
+//                                LEFT JOIN EmployeeTraining et ON et.EmployeeId = e.Id
+//                                LEFT JOIN TrainingProgram tp ON tp.Id = et.TrainingProgramId
+//                                WHERE e.Id = @id";
 
-        //    // Once we've created it, we can pass it to the view
-        //    return View(studentViewModel);
-        //}
+//                    cmd.Parameters.Add(new SqlParameter("@id", id));
 
-        //// POST: Students/Create
+//                    SqlDataReader reader = cmd.ExecuteReader();
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<ActionResult> Create(CreateStudentViewModel model)
-        //{
-        //    using (SqlConnection conn = Connection)
-        //    {
-        //        conn.Open();
-        //        using (SqlCommand cmd = conn.CreateCommand())
-        //        {
-        //            cmd.CommandText = @"INSERT INTO Student
-        //        ( FirstName, LastName, SlackHandle, CohortId )
-        //        VALUES
-        //        ( @firstName, @lastName, @slackHandle, @cohortId )";
-        //            cmd.Parameters.Add(new SqlParameter("@firstName", model.student.FirstName));
-        //            cmd.Parameters.Add(new SqlParameter("@lastName", model.student.LastName));
-        //            cmd.Parameters.Add(new SqlParameter("@slackHandle", model.student.SlackHandle));
-        //            cmd.Parameters.Add(new SqlParameter("@cohortId", model.student.CohortId));
-        //            cmd.ExecuteNonQuery();
+//                    Employee employee = new Employee();
 
-        //            return RedirectToAction(nameof(Index));
-        //        }
-        //    }
-        //}
+//                    while (reader.Read())
+//                    {
+//                        employee = new Employee
+//                        {
+//                            Id = reader.GetInt32(reader.GetOrdinal("EmployeeId")),
+//                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+//                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+//                            CurrentDepartment = new Department
+//                            {
+//                                Name = reader.GetString(reader.GetOrdinal("DepartmentName")),
+//                            }
+//                        };
+//                    }
 
-        //// GET: Students/Edit/5
-        //public ActionResult Edit(int id)
-        //{
-        //    // Create a new instance of a StudentEditViewModel
-        //    // Pass it the studentId and a connection string to the database
-        //    StudentEditViewModel viewModel = new StudentEditViewModel(id, _config.GetConnectionString("DefaultConnection"));
+//                    if (!reader.IsDBNull(reader.GetOrdinal("ComputerId")) && (reader.IsDBNull(reader.GetOrdinal("UnassignDate"))))
+//                    {
+//                        AssignedComputer = new Computer
+//                        {
+//                            Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+//                            Make = reader.GetString(reader.GetOrdinal("Make")),
+//                            Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer"))
+//                        };
+//                    }
 
-        //    // The view model's constructor will work its magic
-        //    // Pass the new instance of the view model to the view
+//                    reader.Close();
 
-        //    return View(viewModel);
-        //}
+//                    return View(employee);
+//                }
+//            }
+//        }
+//    }
+//}
 
-        // POST: Students/Edit/5
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public ActionResult Edit(int id, StudentEditViewModel studentViewModel)
-        //{
-        //    try
-        //    {
-        //        using (SqlConnection conn = Connection)
-        //        {
-        //            conn.Open();
-        //            using (SqlCommand cmd = conn.CreateCommand())
-        //            {
+////GET: Students/Create
+//public ActionResult Create()
+//{
+//    // Create a new instance of a CreateStudentViewModel
+//    // If we want to get all the cohorts, we need to use the constructor that's expecting a connection string. 
+//    // When we create this instance, the constructor will run and get all the cohorts.
+//    CreateStudentViewModel studentViewModel = new CreateStudentViewModel(_config.GetConnectionString("DefaultConnection"));
 
-        //                // First, update the student's information, including their cohortId
-        //                // Wipe out all their previously assigned exercises in the join table
-        //                string command = @"UPDATE Student
-        //                                    SET firstName=@firstName, 
-        //                                    lastName=@lastName, 
-        //                                    slackHandle=@slackHandle, 
-        //                                    cohortId=@cohortId
-        //                                    WHERE Id = @id
-        //                                    DELETE FROM StudentExercise WHERE studentId =@id";
+//    // Once we've created it, we can pass it to the view
+//    return View(studentViewModel);
+//}
 
-        //                // Loop over the selected exercises and add a new entry for each exercise
-        //                studentViewModel.SelectedExercises.ForEach(exerciseId =>
-        //                {
-        //                    command += $" INSERT INTO StudentExercise (StudentId, ExerciseId) VALUES (@id, {exerciseId})";
+//// POST: Students/Create
 
-        //                });
-        //                cmd.CommandText = command;
-        //                cmd.Parameters.Add(new SqlParameter("@firstName", studentViewModel.Student.FirstName));
-        //                cmd.Parameters.Add(new SqlParameter("@lastName", studentViewModel.Student.LastName));
-        //                cmd.Parameters.Add(new SqlParameter("@slackHandle", studentViewModel.Student.SlackHandle));
-        //                cmd.Parameters.Add(new SqlParameter("@cohortId", studentViewModel.Student.CohortId));
-        //                cmd.Parameters.Add(new SqlParameter("@id", id));
+//[HttpPost]
+//[ValidateAntiForgeryToken]
+//public async Task<ActionResult> Create(CreateStudentViewModel model)
+//{
+//    using (SqlConnection conn = Connection)
+//    {
+//        conn.Open();
+//        using (SqlCommand cmd = conn.CreateCommand())
+//        {
+//            cmd.CommandText = @"INSERT INTO Student
+//        ( FirstName, LastName, SlackHandle, CohortId )
+//        VALUES
+//        ( @firstName, @lastName, @slackHandle, @cohortId )";
+//            cmd.Parameters.Add(new SqlParameter("@firstName", model.student.FirstName));
+//            cmd.Parameters.Add(new SqlParameter("@lastName", model.student.LastName));
+//            cmd.Parameters.Add(new SqlParameter("@slackHandle", model.student.SlackHandle));
+//            cmd.Parameters.Add(new SqlParameter("@cohortId", model.student.CohortId));
+//            cmd.ExecuteNonQuery();
 
-        //                int rowsAffected = cmd.ExecuteNonQuery();
+//            return RedirectToAction(nameof(Index));
+//        }
+//    }
+//}
 
-        //            }
+//// GET: Students/Edit/5
+//public ActionResult Edit(int id)
+//{
+//    // Create a new instance of a StudentEditViewModel
+//    // Pass it the studentId and a connection string to the database
+//    StudentEditViewModel viewModel = new StudentEditViewModel(id, _config.GetConnectionString("DefaultConnection"));
 
-        //        }
+//    // The view model's constructor will work its magic
+//    // Pass the new instance of the view model to the view
 
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //    catch
-        //    {
-        //        return View(studentViewModel);
-        //    }
-        //}
+//    return View(viewModel);
+//}
+
+// POST: Students/Edit/5
+//[HttpPost]
+//[ValidateAntiForgeryToken]
+//public ActionResult Edit(int id, StudentEditViewModel studentViewModel)
+//{
+//    try
+//    {
+//        using (SqlConnection conn = Connection)
+//        {
+//            conn.Open();
+//            using (SqlCommand cmd = conn.CreateCommand())
+//            {
+
+//                // First, update the student's information, including their cohortId
+//                // Wipe out all their previously assigned exercises in the join table
+//                string command = @"UPDATE Student
+//                                    SET firstName=@firstName, 
+//                                    lastName=@lastName, 
+//                                    slackHandle=@slackHandle, 
+//                                    cohortId=@cohortId
+//                                    WHERE Id = @id
+//                                    DELETE FROM StudentExercise WHERE studentId =@id";
+
+//                // Loop over the selected exercises and add a new entry for each exercise
+//                studentViewModel.SelectedExercises.ForEach(exerciseId =>
+//                {
+//                    command += $" INSERT INTO StudentExercise (StudentId, ExerciseId) VALUES (@id, {exerciseId})";
+
+//                });
+//                cmd.CommandText = command;
+//                cmd.Parameters.Add(new SqlParameter("@firstName", studentViewModel.Student.FirstName));
+//                cmd.Parameters.Add(new SqlParameter("@lastName", studentViewModel.Student.LastName));
+//                cmd.Parameters.Add(new SqlParameter("@slackHandle", studentViewModel.Student.SlackHandle));
+//                cmd.Parameters.Add(new SqlParameter("@cohortId", studentViewModel.Student.CohortId));
+//                cmd.Parameters.Add(new SqlParameter("@id", id));
+
+//                int rowsAffected = cmd.ExecuteNonQuery();
+
+//            }
+
+//        }
+
+//        return RedirectToAction(nameof(Index));
+//    }
+//    catch
+//    {
+//        return View(studentViewModel);
+//    }
+//}
 
 //        // GET: Students/Delete/5
 //        public ActionResult Delete(int id)
