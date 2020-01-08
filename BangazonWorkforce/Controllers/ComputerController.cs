@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using BangazonWorkforce.Models;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using BangazonWorkforce.Models.ViewModels;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 
 
@@ -142,16 +142,16 @@ namespace BangazonWorkforce.Controllers
             // Create a new instance of a CreateComputerViewModel
             // If we want to get all the ccmputers, we need to use the constructor that's expecting a connection string. 
             // When we create this instance, the constructor will run and get all the computers.
-           CreateComputerViewModel ComputerViewModel = new CreateComputerViewModel(_config.GetConnectionString("DefaultConnection"));
+            CreateComputerViewModel ComputerViewModel = new CreateComputerViewModel(_config.GetConnectionString("DefaultConnection"));
 
             // Once we've created it, we can pass it to the view
             return View(ComputerViewModel);
         }
 
-        // POST: Computers/Create
+        //POST: Computers/Create
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+       [HttpPost]
+       [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(CreateComputerViewModel model)
         {
             using (SqlConnection conn = Connection)
@@ -175,70 +175,70 @@ namespace BangazonWorkforce.Controllers
         }
 
 
-        //// GET: Computers/Edit/5
-        //public ActionResult Edit(int id)
-        //{
-        //    // Create a new instance of a ComputerEditViewModel
-        //    // Pass it the computerId and a connection string to the database
-        //    ComputerEditViewModel viewModel = new ComputerEditViewModel(id, _config.GetConnectionString("DefaultConnection"));
+        // GET: Computers/Edit/5
+        public ActionResult Edit(int id)
+        {
+            // Create a new instance of a ComputerEditViewModel
+            // Pass it the computerId and a connection string to the database
+            ComputerEditViewModel viewModel = new ComputerEditViewModel(id, _config.GetConnectionString("DefaultConnection"));
 
-        //    // The view model's constructor will work its magic
-        //    // Pass the new instance of the view model to the view
+            // The view model's constructor will work its magic
+            // Pass the new instance of the view model to the view
 
-        //    return View(viewModel);
-        //}
+            return View(viewModel);
+        }
 
         //POST: Computers/Edit/5
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public ActionResult Edit(int id, ComputerEditViewModel computerViewModel)
-        //{
-        //    try
-        //    {
-        //        using (SqlConnection conn = Connection)
-        //        {
-        //            conn.Open();
-        //            using (SqlCommand cmd = conn.CreateCommand())
-        //            {
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit(int id, ComputerEditViewModel computerViewModel)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
 
-        //                // First, update the computer's information, including their Manufacturer
-        //                // Wipe out all their previously assigned exercises in the join table
-        //                string command = @"UPDATE Computer
-        //                                    SET PurchaseDate=@PurchaseDate, 
-        //                                    DecomissionDate=@DecomissionDate, 
-        //                                    Make=@Make, 
-        //                                    Manufacturer=@Manufacturer
-        //                                    WHERE Id = @id
-        //                                    DELETE FROM ComputerExercise WHERE computerId =@id";
+                        // First, update the computer's information, including their Manufacturer
+                        // Wipe out all their previously assigned exercises in the join table
+                        string command = @"UPDATE Computer
+                                            SET PurchaseDate=@PurchaseDate, 
+                                            DecomissionDate=@DecomissionDate, 
+                                            Make=@Make, 
+                                            Manufacturer=@Manufacturer
+                                            WHERE Id = @id
+                                            DELETE FROM ComputerExercise WHERE computerId =@id";
 
-        //                // Loop over the selected exercises and add a new entry for each exercise
-        //                computerViewModel.SelectedExercises.ForEach(exerciseId =>
-        //                {
-        //                    command += $" INSERT INTO ComputerExercise (ComputerId, ExerciseId) VALUES (@id, {exerciseId})";
+                        // Loop over the selected exercises and add a new entry for each exercise
+                        computerViewModel.SelectedExercises.ForEach(exerciseId =>
+                        {
+                            command += $" INSERT INTO ComputerExercise (ComputerId, ExerciseId) VALUES (@id, {exerciseId})";
 
-        //                });
-        //                cmd.CommandText = command;
-        //                cmd.Parameters.Add(new SqlParameter("@PurchaseDate", computerViewModel.Computer.PurchaseDate));
-        //                cmd.Parameters.Add(new SqlParameter("@DecomissionDate", computerViewModel.Computer.Make));
-        //                cmd.Parameters.Add(new SqlParameter("@Make", computerViewModel.Computer.Manufacturer));
-        //                cmd.Parameters.Add(new SqlParameter("@Manufacturer", computerViewModel.Computer.Manufacturer));
-        //                cmd.Parameters.Add(new SqlParameter("@id", id));
+                        });
+                        cmd.CommandText = command;
+                        cmd.Parameters.Add(new SqlParameter("@PurchaseDate", computerViewModel.Computer.PurchaseDate));
+                        cmd.Parameters.Add(new SqlParameter("@DecomissionDate", computerViewModel.Computer.Make));
+                        cmd.Parameters.Add(new SqlParameter("@Make", computerViewModel.Computer.Manufacturer));
+                        cmd.Parameters.Add(new SqlParameter("@Manufacturer", computerViewModel.Computer.Manufacturer));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
-        //                int rowsAffected = cmd.ExecuteNonQuery();
+                        int rowsAffected = cmd.ExecuteNonQuery();
 
-        //            }
+                    }
 
-        //        }
+                }
 
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //    catch
-        //    {
-        //        return View(computerViewModel);
-        //    }
-        //}
+                return RedirectToAction(nameof(Index));
+            }
+            catch
+            {
+                return View(computerViewModel);
+            }
+        }
 
-        // GET: Computers/Delete/5
+        //GET: Computers/Delete/5
         public ActionResult Delete(int id)
 {
     using (SqlConnection conn = Connection)
