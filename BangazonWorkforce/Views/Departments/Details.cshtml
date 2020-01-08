@@ -1,0 +1,45 @@
+﻿@model BangazonWorkforce.Models.Department
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>@Html.DisplayFor(model => model.Name)</h1>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Budget)
+        </dt>
+        <dd class="col-sm-10">
+            $@Html.DisplayFor(model => model.Budget)
+        </dd>
+    </dl>
+    <hr />
+    @if (Model.Employees.Count > 0)
+    {
+        <h4>Working in this department:</h4>
+        @foreach (var employee in Model.Employees)
+
+        {
+            <dl class="row">
+               
+                <dt class="col-sm-2">@Html.DisplayNameFor(ModelItem => employee.FirstName)</dt>
+                <dd class="col-sm-10">@Html.DisplayFor(ModelItem => employee.FirstName)</dd>
+                <dt class="col-sm-2">@Html.DisplayNameFor(ModelItem => employee.LastName)</dt>
+                <dd class="col-sm-10">@Html.DisplayFor(ModelItem => employee.LastName)</dd>
+            </dl>
+            <hr />
+        }
+    }
+    else
+    {
+        <h4>No employees in this department yet!</h4>
+
+    }
+</div>
+<div>
+    <a asp-action="Index">Back to all departments</a>
+</div>
+© 2020 GitHub, Inc.
