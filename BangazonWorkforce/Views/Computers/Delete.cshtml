@@ -1,0 +1,59 @@
+﻿
+@model BangazonWorkforce.Models.ViewModels.ComputerDeleteViewModel
+
+@{
+    ViewData["Title"] = "Delete";
+}
+
+<div>
+    @if (Model.isAssigned == true)
+    {
+        <h1>You cannot delete this computer</h1>
+        <h3>This Computer either is currently assigned to an employee, or has been in the past.</h3>
+
+        <a asp-action="Index">Back to List</a>
+
+    }
+    else
+    {
+        <h3>Are you sure you want to delete this?</h3>
+        <h4>Computer</h4>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-2">
+                @Html.DisplayNameFor(model => model.Computer.Id)
+            </dt>
+            <dd class="col-sm-10">
+                @Html.DisplayFor(model => model.Computer.Id)
+            </dd>
+            <dt class="col-sm-2">
+                @Html.DisplayNameFor(model => model.Computer.PurchaseDate)
+            </dt>
+            <dd class="col-sm-10">
+                @Html.DisplayFor(model => model.Computer.PurchaseDate)
+            </dd>
+            <dt class="col-sm-2">
+                @Html.DisplayNameFor(model => model.Computer.DecomissionDate)
+            </dt>
+            <dd class="col-sm-10">
+                @Html.DisplayFor(model => model.Computer.DecomissionDate)
+            </dd>
+            <dt class="col-sm-2">
+                @Html.DisplayNameFor(model => model.Computer.Make)
+            </dt>
+            <dd class="col-sm-10">
+                @Html.DisplayFor(model => model.Computer.Make)
+            </dd>
+            <dt class="col-sm-2">
+                @Html.DisplayNameFor(model => model.Computer.Manufacturer)
+            </dt>
+            <dd class="col-sm-10">
+                @Html.DisplayFor(model => model.Computer.Manufacturer)
+            </dd>
+        </dl>
+
+        <form asp-action="Delete">
+            <input type="submit" value="Delete" class="btn btn-danger" /> |
+            <a asp-action="Index">Back to List</a>
+        </form> }
+</div>

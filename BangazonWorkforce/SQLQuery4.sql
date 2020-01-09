@@ -1,0 +1,1 @@
+﻿SELECT Id, Make, Manufacturer, PurchaseDate, DecomissionDate FROM Computer
