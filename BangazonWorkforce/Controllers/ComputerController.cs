@@ -212,8 +212,7 @@ namespace BangazonWorkforce.Controllers
             }
 
         }
-        //End of the create method
-        //Start of the delete
+
         // POST: Computers/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
