@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -10,16 +11,18 @@ namespace BangazonWorkforce.Models
     {
         public int Id { get; set; }
 
-        [Display(Name = "Purchase Date")]
+        [Required]
+        [DisplayFormat(ApplyFormatInEditMode = true, DataFormatString = "{0:dd/MM/yy}")]
         public DateTime PurchaseDate { get; set; }
 
-        [Display(Name = "Decommission Date")]
+        [Required]
+        [DisplayFormat(ApplyFormatInEditMode = true, DataFormatString = "{0:dd/MM/yy}")]
         public DateTime? DecomissionDate { get; set; }
 
+        [Required]
         public string Make { get; set; }
 
+        [Required]
         public string Manufacturer { get; set; }
-
-        public Employee CurrentEmployee { get; set; }
     }
 }
