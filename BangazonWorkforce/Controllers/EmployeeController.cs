@@ -85,6 +85,7 @@ namespace BangazonWorkforce.Controllers
 
         public ActionResult Details(int id)
         {
+            //Create our view model
             EmployeeDetailsViewModel employee = GetEmployeeById(id);
             return View(employee);
         }
@@ -96,7 +97,8 @@ namespace BangazonWorkforce.Controllers
             {
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
-                {
+                { 
+                    //giant SQL query to get all of the information we'll need in our view model
                     cmd.CommandText = @"
                                 SELECT e.Id AS EmployeeId, 
                                 e.FirstName, 
@@ -128,6 +130,7 @@ namespace BangazonWorkforce.Controllers
                     {
                         if (model == null)
                         {
+                            //create new employee for our view model
                             model = new EmployeeDetailsViewModel();
                             model.Employee = new Employee
                             {
@@ -141,6 +144,7 @@ namespace BangazonWorkforce.Controllers
                             };
                         }
 
+                        // if the computer ID is NOT null and the Unassign date IS null, create a model for the assigned computer
                         if (!reader.IsDBNull(reader.GetOrdinal("ComputerId")) && (reader.IsDBNull(reader.GetOrdinal("UnassignDate"))))
                         {
                             model.AssignedComputer = new Computer
@@ -151,6 +155,7 @@ namespace BangazonWorkforce.Controllers
                             };
                         }
 
+                        // if the computer employee ID is not null and the unassign date IS null, create a model for assign date
                         if (!reader.IsDBNull(reader.GetOrdinal("ComputerEmployeeId")) && (reader.IsDBNull(reader.GetOrdinal("UnassignDate"))))
                         {
                             model.ComputerEmployee = new ComputerEmployee
@@ -158,6 +163,8 @@ namespace BangazonWorkforce.Controllers
                                 AssignDate = reader.GetDateTime(reader.GetOrdinal("AssignDate"))
                             };
                         }
+
+                
 
                         if (!reader.IsDBNull(reader.GetOrdinal("TrainingProgramId")))
                         {
