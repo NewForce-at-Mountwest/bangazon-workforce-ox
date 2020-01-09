@@ -16,6 +16,7 @@ namespace BangazonWorkforce.Models
         public DateTime PurchaseDate { get; set; }
 
         [Required]
+        [Display(Name = "Decomission Date")]
         [DisplayFormat(ApplyFormatInEditMode = true, DataFormatString = "{0:dd/MM/yy}")]
         public DateTime? DecomissionDate { get; set; }
 

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using BangazonWorkforce.Models.ViewModels;
+using System;
 
 namespace BangazonWorkforce.Controllers
 {
@@ -34,22 +35,24 @@ namespace BangazonWorkforce.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"SELECT Id, Make, Manufacturer, PurchaseDate FROM Computer";
+                    cmd.CommandText = @"SELECT Id, Make, Manufacturer, PurchaseDate, DecomissionDate FROM Computer";
 
+                  
                     SqlDataReader reader = cmd.ExecuteReader();
-
                     List<Computer> computers = new List<Computer>();
-
+                    DateTime? NullDateTime = null;
                     while (reader.Read())
                     {
-                        Computer computer = new Computer
+                        //create individual instance of computer
+                        Computer currentComputer = new Computer
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("id")),
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Make = reader.GetString(reader.GetOrdinal("Make")),
                             Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
-                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate"))
+                            PurchaseDate = reader.GetDateTime(reader.GetOrdinal("PurchaseDate")),
+                            DecomissionDate = reader.IsDBNull(reader.GetOrdinal("DecomissionDate")) ? NullDateTime : reader.GetDateTime(reader.GetOrdinal("DecomissionDate"))
                         };
-                        computers.Add(computer);
+                            computers.Add(currentComputer);
 
                     }
                     reader.Close();
